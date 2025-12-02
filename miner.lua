@@ -237,24 +237,30 @@ local function detectOres()
     local oresFound = false
     
     -- Frente
-    local ok, success, data = pcall(turtle.inspect)
-    if ok and success and data and data.name and VALUABLE_ORES[data.name] then
-        oresFound = true
-        oresFoundCount = oresFoundCount + 1
+    if turtle.inspect then
+        local success, data = turtle.inspect()
+        if success and data and data.name and VALUABLE_ORES[data.name] then
+            oresFound = true
+            oresFoundCount = oresFoundCount + 1
+        end
     end
     
     -- Cima
-    ok, success, data = pcall(turtle.inspectUp)
-    if ok and success and data and data.name and VALUABLE_ORES[data.name] then
-        oresFound = true
-        oresFoundCount = oresFoundCount + 1
+    if turtle.inspectUp then
+        local success, data = turtle.inspectUp()
+        if success and data and data.name and VALUABLE_ORES[data.name] then
+            oresFound = true
+            oresFoundCount = oresFoundCount + 1
+        end
     end
     
     -- Baixo
-    ok, success, data = pcall(turtle.inspectDown)
-    if ok and success and data and data.name and VALUABLE_ORES[data.name] then
-        oresFound = true
-        oresFoundCount = oresFoundCount + 1
+    if turtle.inspectDown then
+        local success, data = turtle.inspectDown()
+        if success and data and data.name and VALUABLE_ORES[data.name] then
+            oresFound = true
+            oresFoundCount = oresFoundCount + 1
+        end
     end
     
     return oresFound
@@ -381,10 +387,9 @@ local function main()
     log("=================================")
     
     -- Verifica se há baú embaixo (requer ComputerCraft 1.4+)
-    local hasInspect = pcall(function() return turtle.inspectDown end)
-    if hasInspect then
-        local ok, success, data = pcall(turtle.inspectDown)
-        if ok and success and data and data.name and string.find(data.name, "chest") then
+    if turtle.inspectDown then
+        local success, data = turtle.inspectDown()
+        if success and data and data.name and string.find(data.name, "chest") then
             homeChest = true
             log("Baú detectado! Retorno automático ativado.")
         end
