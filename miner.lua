@@ -1,6 +1,7 @@
 -- ============================================
 -- MINER.LUA - Sistema Completo de Mineração
 -- ComputerCraft Mining Script
+-- API: https://computercraft.info/wiki/Turtle_(API)
 -- ============================================
 
 local args = {...}
@@ -55,24 +56,20 @@ local KEEP_ITEMS = {
 
 -- Slots reservados
 local FUEL_SLOT = 1
-local CHEST_SLOT = 2
-local TORCH_SLOT = 3
-local FIRST_MINING_SLOT = 4
+local TORCH_SLOT = 2
+local FIRST_MINING_SLOT = 3
 
 -- Configurações
 local MIN_FUEL_LEVEL = 100
 local TORCH_INTERVAL = 8
-local INVENTORY_FULL_THRESHOLD = 14
 
 -- ============================================
 -- VARIÁVEIS GLOBAIS
 -- ============================================
 
 local blocksMinedCount = 0
-local oresFoundCount = 0
 local currentDepth = 0
 local torchCounter = 0
-local homeChest = nil
 
 -- ============================================
 -- FUNÇÕES UTILITÁRIAS
@@ -84,22 +81,32 @@ end
 
 -- Verifica e reabastece combustível
 local function checkFuel()
-    if turtle.getFuelLevel() < MIN_FUEL_LEVEL then
-        log("Combustível baixo: " .. turtle.getFuelLevel())
+    local fuelLevel = turtle.getFuelLevel()
+    if fuelLevel == "unlimited" then
+        return true
+    end
+    
+    if fuelLevel < MIN_FUEL_LEVEL then
+        log("Combustivel baixo: " .. fuelLevel)
         turtle.select(FUEL_SLOT)
         if turtle.getItemCount(FUEL_SLOT) > 0 then
             turtle.refuel(1)
-            log("Reabastecido! Nível: " .. turtle.getFuelLevel())
+            log("Reabastecido! Nivel: " .. turtle.getFuelLevel())
+            return true
         else
-            log("AVISO: Sem combustível no slot " .. FUEL_SLOT)
+            log("AVISO: Sem combustivel no slot " .. FUEL_SLOT)
+            return false
         end
     end
+    return true
 end
 
 -- Verifica se um item é valioso
 local function isValuableItem(slot)
     local item = turtle.getItemDetail(slot)
-    if not item then return false end
+    if not item then 
+        return false 
+    end
     
     return VALUABLE_ORES[item.name] or KEEP_ITEMS[item.name]
 end
@@ -108,14 +115,14 @@ end
 local function discardJunk()
     local discarded = 0
     for slot = FIRST_MINING_SLOT, 16 do
-        turtle.select(slot)
         if turtle.getItemCount(slot) > 0 and not isValuableItem(slot) then
+            turtle.select(slot)
             turtle.drop()
             discarded = discarded + 1
         end
     end
     if discarded > 0 then
-        log("Descartados " .. discarded .. " tipos de itens inúteis")
+        log("Descartados " .. discarded .. " tipos de itens")
     end
     turtle.select(FIRST_MINING_SLOT)
 end
@@ -128,38 +135,7 @@ local function isInventoryFull()
             emptySlots = emptySlots + 1
         end
     end
-    return emptySlots <= 2
-end
-
--- Compacta inventário
-local function compactInventory()
-    for slot = FIRST_MINING_SLOT, 16 do
-        if turtle.getItemCount(slot) > 0 then
-            turtle.select(slot)
-            for targetSlot = FIRST_MINING_SLOT, slot - 1 do
-                if turtle.getItemCount(targetSlot) > 0 then
-                    turtle.transferTo(targetSlot)
-                    if turtle.getItemCount(slot) == 0 then
-                        break
-                    end
-                end
-            end
-        end
-    end
-    turtle.select(FIRST_MINING_SLOT)
-end
-
--- Descarrega itens em um baú
-local function unloadToChest()
-    log("Descarregando itens no baú...")
-    for slot = FIRST_MINING_SLOT, 16 do
-        if turtle.getItemCount(slot) > 0 then
-            turtle.select(slot)
-            turtle.drop()
-        end
-    end
-    turtle.select(FIRST_MINING_SLOT)
-    log("Itens descarregados!")
+    return emptySlots <= 1
 end
 
 -- ============================================
@@ -167,50 +143,64 @@ end
 -- ============================================
 
 local function safeDigForward()
-    local attempts = 0
-    while turtle.detect() and attempts < 10 do
-        turtle.dig()
-        sleep(0.4)
-        attempts = attempts + 1
+    while turtle.detect() do
+        if not turtle.dig() then
+            return false
+        end
+        sleep(0.5)
     end
+    return true
 end
 
 local function safeDigUp()
-    local attempts = 0
-    while turtle.detectUp() and attempts < 10 do
-        turtle.digUp()
-        sleep(0.4)
-        attempts = attempts + 1
+    while turtle.detectUp() do
+        if not turtle.digUp() then
+            return false
+        end
+        sleep(0.5)
     end
+    return true
 end
 
 local function safeDigDown()
-    local attempts = 0
-    while turtle.detectDown() and attempts < 10 do
-        turtle.digDown()
-        sleep(0.4)
-        attempts = attempts + 1
+    while turtle.detectDown() do
+        if not turtle.digDown() then
+            return false
+        end
+        sleep(0.5)
     end
+    return true
 end
 
 local function forward()
-    checkFuel()
+    if not checkFuel() then
+        return false
+    end
+    
     safeDigForward()
+    
     if turtle.forward() then
         blocksMinedCount = blocksMinedCount + 1
         return true
     end
+    
     return false
 end
 
 local function up()
-    checkFuel()
+    if not checkFuel() then
+        return false
+    end
+    
     safeDigUp()
     return turtle.up()
 end
 
 local function down()
-    checkFuel()
+    if not checkFuel() then
+        return false
+    end
+    
     safeDigDown()
     return turtle.down()
 end
@@ -232,13 +222,6 @@ end
 -- FUNÇÕES DE MINERAÇÃO
 -- ============================================
 
--- Detecta minérios ao redor (simplificado)
-local function detectOres()
-    -- Função desativada para compatibilidade
-    -- A detecção de minérios funciona através do filtro de inventário
-    return false
-end
-
 -- Coloca tocha se necessário
 local function placeTorch()
     torchCounter = torchCounter + 1
@@ -257,8 +240,7 @@ end
 
 -- Minera um túnel 3x3
 local function dig3x3()
-    -- Centro (já está na posição)
-    detectOres()
+    -- Minera frente, cima e baixo
     safeDigForward()
     safeDigUp()
     safeDigDown()
@@ -269,50 +251,44 @@ local function dig3x3()
     
     currentDepth = currentDepth + 1
     
-    -- Cima
-    detectOres()
+    -- Minera cima
+    safeDigUp()
     up()
     
-    -- Direita superior
+    -- Minera direita superior
     turnRight()
-    detectOres()
     safeDigForward()
     turnLeft()
     
-    -- Esquerda superior
+    -- Minera esquerda superior
     turnLeft()
-    detectOres()
     safeDigForward()
     turnRight()
     
-    -- Volta para baixo
+    -- Volta para o meio
     down()
     
-    -- Direita meio
+    -- Minera direita meio
     turnRight()
-    detectOres()
     safeDigForward()
     turnLeft()
     
-    -- Esquerda meio
+    -- Minera esquerda meio
     turnLeft()
-    detectOres()
     safeDigForward()
     turnRight()
     
-    -- Baixo
-    detectOres()
+    -- Minera baixo
+    safeDigDown()
     down()
     
-    -- Direita inferior
+    -- Minera direita inferior
     turnRight()
-    detectOres()
     safeDigForward()
     turnLeft()
     
-    -- Esquerda inferior
+    -- Minera esquerda inferior
     turnLeft()
-    detectOres()
     safeDigForward()
     turnRight()
     
@@ -324,7 +300,7 @@ local function dig3x3()
     
     -- Gerenciamento de inventário
     if isInventoryFull() then
-        compactInventory()
+        log("Inventario cheio! Descartando itens...")
         discardJunk()
     end
     
@@ -344,7 +320,7 @@ local function returnToBase()
     end
     
     turnAround()
-    log("De volta à base!")
+    log("De volta a base!")
 end
 
 -- ============================================
@@ -353,19 +329,30 @@ end
 
 local function main()
     log("=================================")
-    log("Sistema de Mineração Automática")
+    log("Sistema de Mineracao Automatica")
     log("=================================")
     log("Profundidade: " .. depth .. " blocos")
-    log("Largura: " .. width .. " túneis")
+    log("Largura: " .. width .. " tuneis")
+    log("=================================")
+    log("Setup:")
+    log("  Slot 1: Combustivel (carvao)")
+    log("  Slot 2: Tochas")
+    log("  Slots 3-16: Mineracao")
     log("=================================")
     
-    -- Sistema de baú desativado (causa problemas em algumas versões)
-    -- Para ativar, coloque 'true' abaixo
-    homeChest = false
+    -- Verifica combustível inicial
+    local fuelLevel = turtle.getFuelLevel()
+    if fuelLevel ~= "unlimited" and fuelLevel < 100 then
+        log("ERRO: Combustivel insuficiente!")
+        log("Coloque carvao no slot 1")
+        return
+    end
+    
+    sleep(2)
     
     -- Inicia mineração
     for tunnel = 1, width do
-        log("Iniciando túnel " .. tunnel .. " de " .. width)
+        log("Iniciando tunel " .. tunnel .. " de " .. width)
         currentDepth = 0
         torchCounter = 0
         
@@ -373,24 +360,6 @@ local function main()
             if not dig3x3() then
                 log("Erro ao minerar. Abortando...")
                 break
-            end
-            
-            -- Verifica inventário cheio
-            if isInventoryFull() then
-                if homeChest then
-                    returnToBase()
-                    down()
-                    unloadToChest()
-                    up()
-                    
-                    -- Volta para a posição
-                    for j = 1, currentDepth do
-                        forward()
-                    end
-                else
-                    log("Inventário cheio! Descartando itens inúteis...")
-                    discardJunk()
-                end
             end
             
             if i % 10 == 0 then
@@ -411,20 +380,17 @@ local function main()
         end
     end
     
-    -- Retorna para descarregar
-    if homeChest then
-        down()
-        unloadToChest()
-        up()
-    end
-    
     -- Estatísticas finais
     log("=================================")
-    log("MINERAÇÃO CONCLUÍDA!")
+    log("MINERACAO CONCLUIDA!")
     log("=================================")
     log("Blocos minerados: " .. blocksMinedCount)
-    log("Minérios encontrados: " .. oresFoundCount)
-    log("Combustível restante: " .. turtle.getFuelLevel())
+    
+    local fuelLevel = turtle.getFuelLevel()
+    if fuelLevel ~= "unlimited" then
+        log("Combustivel restante: " .. fuelLevel)
+    end
+    
     log("=================================")
 end
 
