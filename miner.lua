@@ -232,38 +232,11 @@ end
 -- FUNÇÕES DE MINERAÇÃO
 -- ============================================
 
--- Detecta minérios ao redor
+-- Detecta minérios ao redor (simplificado)
 local function detectOres()
-    local oresFound = false
-    
-    -- Frente
-    if turtle.inspect then
-        local success, data = turtle.inspect()
-        if success and data and data.name and VALUABLE_ORES[data.name] then
-            oresFound = true
-            oresFoundCount = oresFoundCount + 1
-        end
-    end
-    
-    -- Cima
-    if turtle.inspectUp then
-        local success, data = turtle.inspectUp()
-        if success and data and data.name and VALUABLE_ORES[data.name] then
-            oresFound = true
-            oresFoundCount = oresFoundCount + 1
-        end
-    end
-    
-    -- Baixo
-    if turtle.inspectDown then
-        local success, data = turtle.inspectDown()
-        if success and data and data.name and VALUABLE_ORES[data.name] then
-            oresFound = true
-            oresFoundCount = oresFoundCount + 1
-        end
-    end
-    
-    return oresFound
+    -- Função desativada para compatibilidade
+    -- A detecção de minérios funciona através do filtro de inventário
+    return false
 end
 
 -- Coloca tocha se necessário
@@ -386,14 +359,9 @@ local function main()
     log("Largura: " .. width .. " túneis")
     log("=================================")
     
-    -- Verifica se há baú embaixo (requer ComputerCraft 1.4+)
-    if turtle.inspectDown then
-        local success, data = turtle.inspectDown()
-        if success and data and data.name and string.find(data.name, "chest") then
-            homeChest = true
-            log("Baú detectado! Retorno automático ativado.")
-        end
-    end
+    -- Sistema de baú desativado (causa problemas em algumas versões)
+    -- Para ativar, coloque 'true' abaixo
+    homeChest = false
     
     -- Inicia mineração
     for tunnel = 1, width do
