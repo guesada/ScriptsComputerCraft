@@ -237,24 +237,30 @@ local function detectOres()
     local oresFound = false
     
     -- Frente
-    local success, data = turtle.inspect()
-    if success and VALUABLE_ORES[data.name] then
-        oresFound = true
-        oresFoundCount = oresFoundCount + 1
+    if turtle.inspect then
+        local success, data = turtle.inspect()
+        if success and data and data.name and VALUABLE_ORES[data.name] then
+            oresFound = true
+            oresFoundCount = oresFoundCount + 1
+        end
     end
     
     -- Cima
-    success, data = turtle.inspectUp()
-    if success and VALUABLE_ORES[data.name] then
-        oresFound = true
-        oresFoundCount = oresFoundCount + 1
+    if turtle.inspectUp then
+        local success, data = turtle.inspectUp()
+        if success and data and data.name and VALUABLE_ORES[data.name] then
+            oresFound = true
+            oresFoundCount = oresFoundCount + 1
+        end
     end
     
     -- Baixo
-    success, data = turtle.inspectDown()
-    if success and VALUABLE_ORES[data.name] then
-        oresFound = true
-        oresFoundCount = oresFoundCount + 1
+    if turtle.inspectDown then
+        local success, data = turtle.inspectDown()
+        if success and data and data.name and VALUABLE_ORES[data.name] then
+            oresFound = true
+            oresFoundCount = oresFoundCount + 1
+        end
     end
     
     return oresFound
@@ -381,10 +387,12 @@ local function main()
     log("=================================")
     
     -- Verifica se há baú embaixo
-    local success, data = turtle.inspectDown()
-    if success and string.find(data.name, "chest") then
-        homeChest = true
-        log("Baú detectado! Retorno automático ativado.")
+    if turtle.inspectDown then
+        local success, data = turtle.inspectDown()
+        if success and data and data.name and string.find(data.name, "chest") then
+            homeChest = true
+            log("Baú detectado! Retorno automático ativado.")
+        end
     end
     
     -- Inicia mineração
