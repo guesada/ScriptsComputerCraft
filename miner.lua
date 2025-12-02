@@ -4,6 +4,12 @@
 -- API: https://computercraft.info/wiki/Turtle_(API)
 -- ============================================
 
+-- Verifica se está rodando em uma turtle
+if not turtle then
+    print("ERRO: Este programa deve ser executado em uma Turtle!")
+    return
+end
+
 local args = {...}
 local depth = tonumber(args[1]) or 64
 local width = tonumber(args[2]) or 1
@@ -143,31 +149,49 @@ end
 -- ============================================
 
 local function safeDigForward()
-    while turtle.detect() do
-        if not turtle.dig() then
-            return false
+    local attempts = 0
+    while attempts < 10 do
+        if turtle.detect() then
+            if not turtle.dig() then
+                return false
+            end
+            sleep(0.5)
+            attempts = attempts + 1
+        else
+            return true
         end
-        sleep(0.5)
     end
     return true
 end
 
 local function safeDigUp()
-    while turtle.detectUp() do
-        if not turtle.digUp() then
-            return false
+    local attempts = 0
+    while attempts < 10 do
+        if turtle.detectUp() then
+            if not turtle.digUp() then
+                return false
+            end
+            sleep(0.5)
+            attempts = attempts + 1
+        else
+            return true
         end
-        sleep(0.5)
     end
     return true
 end
 
 local function safeDigDown()
-    while turtle.detectDown() do
-        if not turtle.digDown() then
-            return false
+    local attempts = 0
+    while attempts < 10 do
+        if turtle.detectDown() then
+            if not turtle.digDown() then
+                return false
+            end
+            sleep(0.5)
+            attempts = attempts + 1
+        else
+            return true
         end
-        sleep(0.5)
     end
     return true
 end
