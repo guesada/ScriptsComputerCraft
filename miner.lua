@@ -4,12 +4,6 @@
 -- API: https://computercraft.info/wiki/Turtle_(API)
 -- ============================================
 
--- Verifica se está rodando em uma turtle
-if not turtle then
-    print("ERRO: Este programa deve ser executado em uma Turtle!")
-    return
-end
-
 local args = {...}
 local depth = tonumber(args[1]) or 64
 local width = tonumber(args[2]) or 1
