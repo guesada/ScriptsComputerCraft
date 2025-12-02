@@ -237,30 +237,24 @@ local function detectOres()
     local oresFound = false
     
     -- Frente
-    if turtle.inspect then
-        local success, data = turtle.inspect()
-        if success and data and data.name and VALUABLE_ORES[data.name] then
-            oresFound = true
-            oresFoundCount = oresFoundCount + 1
-        end
+    local ok, success, data = pcall(turtle.inspect)
+    if ok and success and data and data.name and VALUABLE_ORES[data.name] then
+        oresFound = true
+        oresFoundCount = oresFoundCount + 1
     end
     
     -- Cima
-    if turtle.inspectUp then
-        local success, data = turtle.inspectUp()
-        if success and data and data.name and VALUABLE_ORES[data.name] then
-            oresFound = true
-            oresFoundCount = oresFoundCount + 1
-        end
+    ok, success, data = pcall(turtle.inspectUp)
+    if ok and success and data and data.name and VALUABLE_ORES[data.name] then
+        oresFound = true
+        oresFoundCount = oresFoundCount + 1
     end
     
     -- Baixo
-    if turtle.inspectDown then
-        local success, data = turtle.inspectDown()
-        if success and data and data.name and VALUABLE_ORES[data.name] then
-            oresFound = true
-            oresFoundCount = oresFoundCount + 1
-        end
+    ok, success, data = pcall(turtle.inspectDown)
+    if ok and success and data and data.name and VALUABLE_ORES[data.name] then
+        oresFound = true
+        oresFoundCount = oresFoundCount + 1
     end
     
     return oresFound
@@ -386,10 +380,11 @@ local function main()
     log("Largura: " .. width .. " túneis")
     log("=================================")
     
-    -- Verifica se há baú embaixo
-    if turtle.inspectDown then
-        local success, data = turtle.inspectDown()
-        if success and data and data.name and string.find(data.name, "chest") then
+    -- Verifica se há baú embaixo (requer ComputerCraft 1.4+)
+    local hasInspect = pcall(function() return turtle.inspectDown end)
+    if hasInspect then
+        local ok, success, data = pcall(turtle.inspectDown)
+        if ok and success and data and data.name and string.find(data.name, "chest") then
             homeChest = true
             log("Baú detectado! Retorno automático ativado.")
         end
